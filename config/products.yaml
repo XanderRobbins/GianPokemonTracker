@@ -1,0 +1,17 @@
+# Products to track for stock alerts.
+#
+# Fields:
+#   store  - which checker module to use (see checkers/__init__.py for supported stores)
+#   label  - human-readable name shown in Discord alerts
+#   url    - direct product page link (used in the alert; also used as the state key)
+#   sku    - store-specific product ID, required by some checkers (e.g. bestbuy)
+#
+# Stores currently implemented: bestbuy
+# Stores planned but not yet implemented: pokemoncenter, target, walmart
+# (products for unimplemented stores are skipped with a warning, not an error)
+
+products:
+  - store: bestbuy
+    label: "Pokemon TCG Scarlet & Violet Booster Box"
+    url: "https://www.bestbuy.com/site/REPLACE-ME.p?skuId=REPLACE_SKU"
+    sku: "REPLACE_SKU"
