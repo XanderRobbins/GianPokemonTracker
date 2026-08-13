@@ -33,7 +33,7 @@ def _find_product_node(node):
     return None
 
 
-def check(product: dict) -> CheckResult:
+def check(product: dict, home_zip: str | None = None) -> CheckResult:
     url = product.get("url")
     if not url:
         return CheckResult(in_stock=False, error="product config missing 'url'")

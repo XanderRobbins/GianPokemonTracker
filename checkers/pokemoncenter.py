@@ -9,7 +9,7 @@ OUT_OF_STOCK_PHRASES = ("sold out", "notify me", "out of stock", "coming soon")
 PRICE_RE = re.compile(r"\$\s?\d[\d,]*(?:\.\d{2})?")
 
 
-def check(product: dict) -> CheckResult:
+def check(product: dict, home_zip: str | None = None) -> CheckResult:
     url = product.get("url")
     if not url:
         return CheckResult(in_stock=False, error="product config missing 'url'")

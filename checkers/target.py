@@ -11,7 +11,7 @@ FULFILLMENT_URL = "https://redsky.target.com/redsky_aggregations/v1/web/pdp_clie
 DEFAULT_API_KEY = "9f36aeafbe60771e321a7cc95a78140772ab3e96"
 
 
-def check(product: dict) -> CheckResult:
+def check(product: dict, home_zip: str | None = None) -> CheckResult:
     tcin = product.get("sku") or product.get("tcin")
     if not tcin:
         return CheckResult(in_stock=False, error="product config missing 'sku' (Target TCIN)")

@@ -11,6 +11,13 @@
 # "Notes on reliability" section)
 # Products for a store with no matching checker are skipped with a
 # warning, not an error, so it's safe to list stores ahead of support.
+#
+# home_zip - your zip code, used to compute distance to the nearest
+# physical store with the item in stock. Optional; leave blank to skip
+# distance scoring entirely. Currently only used by the bestbuy checker
+# (the only store with a reliable public per-store inventory API).
+
+home_zip: "REPLACE_ZIP"
 
 products:
   - store: bestbuy

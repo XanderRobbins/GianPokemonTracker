@@ -20,3 +20,7 @@ class CheckResult:
     in_stock: bool
     price: Optional[str] = None
     error: Optional[str] = None
+    # {"name": str, "distance_miles": float} for the closest physical store
+    # carrying the item, when the checker supports store-level lookup and a
+    # home_zip was configured. None otherwise.
+    nearest_store: Optional[dict] = None

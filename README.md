@@ -1,12 +1,19 @@
 # GianPokemon — Pokémon TCG Stock Checker
 
-Polls product pages across retailers and pings a Discord channel the moment
-something goes from out-of-stock to in-stock. Runs free on GitHub Actions.
+Polls product pages across retailers, pings a Discord channel the moment
+something goes from out-of-stock to in-stock, and publishes a live dashboard.
+Runs free on GitHub Actions + GitHub Pages.
 
 ## Status
 
 - ✅ Best Buy — via the public `api.bestbuy.com` product API. Most reliable
-  of the four; no bot protection encountered.
+  of the four; no bot protection encountered. The nearest-physical-store
+  distance lookup (`_find_nearest_store` in `checkers/bestbuy.py`) is built
+  against Best Buy's documented Stores API shape but wasn't verified live
+  (no API key was available during dev) — it fails closed (logs a warning,
+  omits distance from the dashboard) rather than breaking the stock check
+  if the response shape doesn't match, but double check it once you have a
+  real key and a real SKU.
 - ⚠️ Pokémon Center — HTML parsing implemented, but the site is behind
   Incapsula and returned a bot-challenge page (not real markup) in testing.
   Fails gracefully (logged + skipped) rather than reporting wrong stock
@@ -22,13 +29,24 @@ something goes from out-of-stock to in-stock. Runs free on GitHub Actions.
 
 ## How it works
 
-1. `config/products.yaml` lists the products to track.
+1. `config/products.yaml` lists the products to track (and your `home_zip`,
+   optional, for distance scoring).
 2. `main.py` runs each product through the matching module in `checkers/`,
    compares the result to `state.json`, and calls `notify.py` when a product
    flips from out-of-stock to in-stock.
-3. `state.json` is committed back to the repo after every run so state
-   survives between scheduled runs.
-4. `.github/workflows/check.yml` runs `main.py` on a cron schedule.
+3. Every time a product's stock status *flips*, `history.py` logs the event
+   to `history.json`. `scoring.py` turns that history into a "rarity" label
+   (`Common` → `Ultra Rare`) based on how long the item typically stays in
+   stock before selling out again — more of a scarcity/hype estimate than
+   the card game's own rarity tiers.
+4. `build_dashboard.py` renders `state.json` into `docs/index.html` — a
+   static page with a card per product: stock status, price, rarity badge,
+   and (Best Buy only, see below) distance to the nearest carrying store.
+5. `state.json`, `history.json`, and `docs/index.html` are committed back to
+   the repo after every run so everything survives between scheduled runs.
+6. `.github/workflows/check.yml` runs the whole pipeline on a cron schedule.
+   GitHub Pages serves `docs/index.html` at a stable URL — see
+   [Dashboard](#dashboard) below for the one-time setup.
 
 ## Adding a product to track
 
@@ -48,6 +66,27 @@ products:
   or it'll be treated as a new product.
 - `sku` is required for the `bestbuy` checker (find it in the product URL or
   Best Buy's page details).
+
+Also set `home_zip` at the top level of `config/products.yaml` (a real US zip
+code, not the placeholder) if you want distance-to-nearest-store scores on
+the dashboard. Leave the placeholder in place to skip distance scoring
+entirely — nothing else depends on it.
+
+## Dashboard
+
+`docs/index.html` is regenerated every run and committed back, so if GitHub
+Pages is pointed at it, you get a live URL that always reflects the latest
+check — no server to keep running yourself.
+
+**One-time setup:** in the repo, go to Settings → Pages → under "Build and
+deployment," set Source to "Deploy from a branch," Branch to `main` /
+`/docs`, then Save. After the next workflow run commits a `docs/index.html`,
+the page will be live at `https://<your-username>.github.io/<repo-name>/`.
+
+Each card shows: stock status, price (if the store's API/page exposes one),
+a rarity badge, and — for Best Buy only, since it's the only store with a
+reliable public per-store inventory API — distance to the nearest physical
+store currently carrying the item, when `home_zip` is set.
 
 ## Setup
 
@@ -69,9 +108,9 @@ secret. Add:
 - `BESTBUY_API_KEY`
 - `DISCORD_WEBHOOK_URL`
 
-The workflow also needs `contents: write` permission to commit `state.json`
-back (already set in `check.yml`); no extra token setup is needed beyond the
-default `GITHUB_TOKEN`.
+The workflow also needs `contents: write` permission to commit `state.json`,
+`history.json`, and `docs/index.html` back (already set in `check.yml`); no
+extra token setup is needed beyond the default `GITHUB_TOKEN`.
 
 ### 4. Local testing
 
@@ -86,9 +125,12 @@ yourself or add `python-dotenv` if you want that convenience.)
 
 ## Adding a new store checker
 
-1. Create `checkers/<store>.py` with a `check(product: dict) -> CheckResult`
+1. Create `checkers/<store>.py` with a
+   `check(product: dict, home_zip: str | None = None) -> CheckResult`
    function (see `checkers/base.py` for the `CheckResult` shape and shared
-   HTTP headers/timeout).
+   HTTP headers/timeout). `home_zip` only matters if you're adding
+   distance-to-store scoring for that store; otherwise just accept and
+   ignore it.
 2. Register it in `checkers/__init__.py`'s `CHECKERS` dict.
 3. Add products for that store to `config/products.yaml`.
 
