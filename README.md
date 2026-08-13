@@ -5,10 +5,20 @@ something goes from out-of-stock to in-stock. Runs free on GitHub Actions.
 
 ## Status
 
-- ✅ Best Buy — via the public `api.bestbuy.com` product API
-- ⬜ Pokémon Center — not yet implemented
-- ⬜ Target — not yet implemented
-- ⬜ Walmart — not yet implemented
+- ✅ Best Buy — via the public `api.bestbuy.com` product API. Most reliable
+  of the four; no bot protection encountered.
+- ⚠️ Pokémon Center — HTML parsing implemented, but the site is behind
+  Incapsula and returned a bot-challenge page (not real markup) in testing.
+  Fails gracefully (logged + skipped) rather than reporting wrong stock
+  state, but expect it to rarely succeed from a datacenter IP.
+- ⚠️ Target — implemented against the RedSky fulfillment API, but that API
+  returned a CAPTCHA challenge in testing, even with realistic
+  Referer/Origin headers. Same graceful-failure behavior as above.
+- ⚠️ Walmart — implemented via the `__NEXT_DATA__` JSON embedded in product
+  pages (avoids their more aggressively-protected search/API endpoints).
+  Walmart's search page returned a PerimeterX "Robot or human?" challenge
+  in testing; individual product pages were not confirmed to work with a
+  real SKU. Same graceful-failure behavior as above.
 
 ## How it works
 
@@ -91,8 +101,16 @@ as a last resort.
 
 - Best Buy's API is the most stable of the four and was built first to prove
   the pipeline end-to-end.
-- Target and Walmart use bot-protected APIs; GitHub Actions' shared runner
-  IPs may get flagged. Expect these to be less reliable than Best Buy even
-  once implemented.
+- Pokémon Center, Target, and Walmart are all confirmed (not just suspected)
+  to run bot protection that blocks plain HTTP requests some or most of the
+  time: Pokémon Center returns an Incapsula challenge page, Target's API
+  returns a CAPTCHA response, and Walmart's search returned a PerimeterX
+  challenge. All three checkers degrade to a logged error + skip rather than
+  reporting incorrect stock state when this happens — but treat alerts from
+  these three as "best effort," and lean on Best Buy as the reliable one.
+  Realistically these will likely need to run less frequently, from a
+  non-datacenter IP, or with a headless browser to be trustworthy — Playwright
+  is the natural next step if that's worth the added GitHub Actions compute
+  cost to you.
 - Requests use browser-like headers and a small random jitter (1-3s) between
   checks to avoid hammering sites in a burst.

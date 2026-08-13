@@ -6,9 +6,11 @@
 #   url    - direct product page link (used in the alert; also used as the state key)
 #   sku    - store-specific product ID, required by some checkers (e.g. bestbuy)
 #
-# Stores currently implemented: bestbuy
-# Stores planned but not yet implemented: pokemoncenter, target, walmart
-# (products for unimplemented stores are skipped with a warning, not an error)
+# Stores implemented: bestbuy, pokemoncenter, target, walmart
+# (bestbuy is reliable; the other three are best-effort - see README's
+# "Notes on reliability" section)
+# Products for a store with no matching checker are skipped with a
+# warning, not an error, so it's safe to list stores ahead of support.
 
 products:
   - store: bestbuy
